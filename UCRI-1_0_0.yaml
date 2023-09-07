@@ -1,0 +1,768 @@
+openapi: 3.0.0
+servers:
+  - description: Universal Control Room Interface (UCRI) - v1.0.0
+    url: https://virtserver.swaggerhub.com/EFUL/UCRI/1.0.0
+info:
+  version: "1.0.0"
+  title: Universal Control Room Interface (UCRI) - v1.0.0
+  description: >-
+    Definition of the UCRI schema
+paths:
+  /home:
+    get:
+      summary: Information about the interface version and the available resources
+      description: Provides information about the interface version and the available resources
+      tags:
+        - home
+      security: 
+        - BearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content: 
+            application/vnd.simplemedia+json:
+              schema:
+                $ref: '#/components/schemas/Home'
+        '401':
+          description: Client is not authorized yet, token is invalid or expired 
+          content:
+            application/vnd.simplemedia+json:
+              schema:
+                $ref: '#/components/schemas/NotAuthorized'
+        '500':
+          description: Something went wrong.
+  /authorize:
+    get:
+      summary: Issues an access token
+      description: Issues an access token
+      tags:
+        - auth
+      security: 
+        - BasicAuth: []
+      parameters:
+        - in: header
+          name: ClientId
+          description: Base64-Encoded-Client-Id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content: 
+            application/vnd.simplemedia+json:
+              schema:
+                $ref: '#/components/schemas/JWT'
+        '400':
+          description: The request was incomplete.
+        '401':
+          description: Not allowed to authorize.
+        '500':
+          description: Something went wrong.
+  /incidents:
+    post:
+      summary: Accepting incidents
+      description: Accepting a incident from another control station
+      tags: 
+        - incident
+      security: 
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/vnd.simplemedia+json:
+            schema:
+              $ref: '#/components/schemas/Incident'
+      responses:
+        '201':
+          description: Incident has been created
+        '400':
+          description: Incident is invalid
+        '401':
+          description: Client is not authorized yet, token is invalid or expired
+          content:
+            application/vnd.simplemedia+json:
+              schema:
+                $ref: '#/components/schemas/NotAuthorized'
+        '500':
+          description: Internal Server Error
+  /incidents/{sharedIncidentId}/messages:
+    post:
+      summary: Message transmission
+      description: Transmits a message about the operation
+      tags: 
+        - incident
+      security: 
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: sharedIncidentId
+          description: Shared ID of the incident the meassage should be added
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/vnd.simplemedia+json:
+            schema:
+              $ref: '#/components/schemas/Message'
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request - see message in body for more Informations
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: Client is not authorized yet, token is invalid or expired
+          content:
+            application/vnd.simplemedia+json:
+              schema:
+                $ref: '#/components/schemas/NotAuthorized'
+        '404':
+          description: Not Found
+        '500': 
+          description: Internal Server Error
+  /incidents/{sharedIncidentId}/acknowledgements/retrieved:
+    put:
+      summary: Acknowledge transmission
+      description: Acknowledges to the sending interface that the mission data has been transmitted to the remote ELS.
+      tags: 
+        - incident
+        - acknowledgment
+      security: 
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: sharedIncidentId
+          description: Shared ID of the acknowledged incident
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/vnd.simplemedia+json:
+            schema:
+              $ref: '#/components/schemas/Confirmation'
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: The request was incomplete.
+        '401':
+          description: Client is not authorized yet, token is invalid or expired
+          content:
+            application/vnd.simplemedia+json:
+              schema:
+                $ref: '#/components/schemas/NotAuthorized'
+        '500': 
+          description: Internal Server Error
+  /incidents/{sharedIncidentId}/acknowledgements/confirm:
+    put:
+      summary: Acknowledge acceptance
+      description: Acknowledges to the sending interface that the receiving control station has accepted or rejected the operation.
+      tags: 
+        - incident
+        - acknowledgment
+      security: 
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: sharedIncidentId
+          description: Shared ID of the acknowledged incident
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/vnd.simplemedia+json:
+            schema:
+              $ref: '#/components/schemas/Confirmation'
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request - see message in body for more Informations
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: Client is not authorized yet, token is invalid or expired
+          content:
+            application/vnd.simplemedia+json:
+              schema:
+                $ref: '#/components/schemas/NotAuthorized'
+        '404':
+          description: Not Found
+        '500': 
+          description: Internal Server Error
+  /incidents/{sharedIncidentId}/resourceRequests/{requestId}/accept:
+    post:
+      summary: Positive acknowledgement of the resource request
+      description: Positive acknowledgement of the resource request
+      tags: 
+        - resourceRequest
+        - acknowledgment
+      security: 
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: sharedIncidentId
+          description: Shared ID of the acknowledged incident
+          schema:
+            type: string
+          required: true
+        - in: path
+          name: requestId
+          description: ID of the resource request
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/vnd.simplemedia+json:
+            schema:
+              $ref: '#/components/schemas/PositiveConfirmation'
+      responses:
+        '202':
+          description: Accepted
+        '400':
+          description: The request body is invalid or incomplete
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: Client is not authorized yet, token is invalid or expired
+          content:
+            application/vnd.simplemedia+json:
+              schema:
+                $ref: '#/components/schemas/NotAuthorized'
+        '500': 
+          description: Internal Server Error
+  /incidents/{sharedIncidentId}/resourceRequests/{requestId}/reject:
+    post:
+      summary: Negative acknowledgement of the resource request
+      description: Negative acknowledgement of the resource request
+      tags: 
+        - resourceRequest
+        - acknowledgment
+      security: 
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: sharedIncidentId
+          description: Shared ID of the acknowledged incident
+          schema:
+            type: string
+          required: true
+        - in: path
+          name: requestId
+          description: ID of the resource request
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/vnd.simplemedia+json:
+            schema:
+              $ref: '#/components/schemas/NegativeConfirmation'
+      responses:
+        '202':
+          description: Accepted
+        '400':
+          description: The request body is invalid or incomplete
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: Client is not authorized yet, token is invalid or expired
+          content:
+            application/vnd.simplemedia+json:
+              schema:
+                $ref: '#/components/schemas/NotAuthorized'
+        '500': 
+          description: Internal Server Error
+  /incidents/{sharedIncidentId}/resourceRequests/{requestId}/acceptTemporary:
+    post:
+      summary: Temporary positive acknowledgement of the resource request
+      description: Temporary positive acknowledgement of the resource request
+      tags: 
+        - resourceRequest
+        - acknowledgment
+      security: 
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: sharedIncidentId
+          description: Shared ID of the acknowledged incident
+          schema:
+            type: string
+          required: true
+        - in: path
+          name: requestId
+          description: ID of the resource request
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/vnd.simplemedia+json:
+            schema:
+              $ref: '#/components/schemas/TemporaryPositiveConfirmation'
+      responses:
+        '202':
+          description: Accepted
+        '400':
+          description: The request body is invalid or incomplete
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: Client is not authorized yet, token is invalid or expired
+          content:
+            application/vnd.simplemedia+json:
+              schema:
+                $ref: '#/components/schemas/NotAuthorized'
+        '500': 
+          description: Internal Server Error
+  /incidents/{sharedIncidentId}/resourceRequests/{requestId}/confirmTurnOut:
+    post:
+      summary: Acknowledge turn out
+      description: Acknowledgement of turn out from the resource request 
+      tags: 
+        - resourceRequest
+        - acknowledgment
+      security: 
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: sharedIncidentId
+          description: Shared ID of the acknowledged incident
+          schema:
+            type: string
+          required: true
+        - in: path
+          name: requestId
+          description: ID of the resource request
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/vnd.simplemedia+json:
+            schema:
+              $ref: '#/components/schemas/ResourceTurnOutConfirmation'
+      responses:
+        '202':
+          description: Accepted
+        '400':
+          description: The request body is invalid or incomplete
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: Client is not authorized yet, token is invalid or expired
+          content:
+            application/vnd.simplemedia+json:
+              schema:
+                $ref: '#/components/schemas/NotAuthorized'
+        '500': 
+          description: Internal Server Error
+  /classifications:
+    get:
+      summary: Get classifications
+      description: For querying the classifications maintained in the control system. Enables mapping between the classifications of the external and the own control center. The mapping must be performed by the receiving system. 
+      tags:
+        - masterdata
+      security: 
+        - BearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/vnd.simplemedia+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Classification'
+        '401':
+          description: Client is not authorized yet, token is invalid or expired
+          content:
+            application/vnd.simplemedia+json:
+              schema:
+                $ref: '#/components/schemas/NotAuthorized'
+        '500': 
+          description: Internal Server Error
+  /resourceTypes:
+    get:
+      summary: Get resource types
+      description: For querying the resource types maintained in the control system. Enables mapping between resource types of the external and the own control center.  The mapping must be performed by the receiving system.
+      tags:
+        - masterdata
+      security: 
+        - BearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/vnd.simplemedia+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResourceType'
+        '401':
+          description: Client is not authorized yet, token is invalid or expired
+          content:
+            application/vnd.simplemedia+json:
+              schema:
+                $ref: '#/components/schemas/NotAuthorized'
+        '500': 
+          description: Internal Server Error
+components:
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+    BearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    Link:
+      properties:
+        rel:
+          type: string
+          description: |
+            Describes the connection (e.g.: self: the resource itself, classification: the keywords to the resource).  
+            If available, care is taken to use registered values (see https://www.iana.org/assignments/link-relations/link-relations.xhtml or https://tools.ietf.org/html/rfc8288
+        href:
+          type: string
+          description: The address of the connection.
+        label:
+          type: string
+          description: Should the link be displayed on a UI, this is the suggestion with which it will be displayed
+        name:
+          type: string
+          description: A name that describes the resource
+    Home:
+      properties:
+        version:
+          $ref: '#/components/schemas/Version'
+        links:
+          type: array
+          items: 
+            $ref: '#/components/schemas/Link'
+          description: Links to interface resources
+    Version:
+      description: Information about the interface version
+      properties:
+        ucriVersion:
+          type: string
+          description: Version of the UCRI interface specification
+        version:
+          type: string
+          description: Manufacturer product version
+        applicationName:
+          type: string
+          description: Manufacturer Product/Interface Name 
+    JWT:
+      description: The JWT (JSON Web Token) contains the Access Token which is used to verify access to the API.
+      properties:
+        accessToken:
+          type: string
+          description: JSON Web Token - verifies access to the API
+        expiresIn:
+          type: integer
+          format: int64
+          description: Unix timestamp - after this time the JSON web token is invalid
+        tokenType:
+          type: string
+          description: The type of the JSON web token
+          example: Bearer
+    NotAuthorized:
+      description: Returned if an access was not authorized. The included link can be used to reauthorize the client.
+      properties:
+        message:
+          type: string
+          description: A message describing why you are not authorized.
+        authorizeLink:
+          description: Link to Authorize endpoint
+          $ref: '#/components/schemas/Link'
+    Incident:
+      description: Describes an incident data object.
+      properties:
+        id:
+          type: string
+          description: Unique ID of the incident
+        classifications:
+          type: array
+          items:
+            type: string
+          description: Classifications of the incident
+        sharedIncidentId:
+          type: string
+          description: GUID is defined by the sender system before the transfer. Serves to identify the incident on all systems involved. 
+        sender:
+          type: string
+          description: Identification of the sending control station
+        target:
+          type: string
+          description: Identification of the receiving control station
+        sentByDispatcherAt:
+          type: string
+          format: date-time
+          description: Time at which the transfer was triggered by the dispatcher
+        sentByElsAt:
+          type: string
+          format: date-time
+          description: Time at which the sending dispatching system transmitted the incident
+        requestedResources:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceRequest'
+          description: The requested input means and/or input means types
+        resources:
+          type: array
+          items:
+            $ref: '#/components/schemas/Resource'
+          description: The resources involved in the operation
+        patients:
+          type: array
+          items:
+            $ref: '#/components/schemas/Patient'
+          description: The patients involved in the operation who have not yet been assigned to a resource
+        informers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Informer'
+          description: The informers who called the dispatch center
+        appendices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Appendix'
+          description: Additional attributes of the incident
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/Incident'
+          description: The sections of the incident
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+          description: A list with links to commands for this deployment
+    ResourceRequest:
+      description: Describes a resource request
+      properties:
+        requestId:
+          description: Unique Id of the resource request
+          type: string
+        resourceType:
+          description: Requested resource type
+          type: string
+        targetId:
+          description: Identification of the receiving control station
+          type: string
+        resourceName:
+          description: Name of the requested ressource
+          type: string
+        resourceId:
+          description: ID of the requested resource
+          type: string
+        links:
+          description: A list with links to commands for this deployment
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+    Resource:
+      description: Describes a resource of an operation.#
+      properties:
+        incidentId:
+          description: The ID of the incident to which the resource belongs
+          type: string
+        id:
+          description: ID of the ressource
+          type: string
+        appendices:
+          description: Appendices of the ressource
+          type: array
+          items:
+            $ref: '#/components/schemas/Appendix'
+        patients:
+          description: List of patients assigned to the resource
+          type: array
+          items:
+            $ref: '#/components/schemas/Patient'
+    Patient:
+      description: Describes a patient of an incident
+      properties:
+        incidentId:
+          type: string
+          description: The ID of the incident to which the ressource belongs
+        resourceId:
+          type: string
+          description: The ID of the resource if the patient is assigned to a resource
+        id:
+          type: string
+          description: ID of the patient
+        appendices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Appendix'
+    Informer:
+      description: Describes an informer of an incident
+      properties:
+        incidentId:
+          type: string
+          description: The ID of the incident to which the informer belongs
+        id:
+          type: string
+          description: ID of the informer
+        appendices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Appendix'
+          description: Additional attributes of the informer
+    Appendix:
+      description: Describes additional data for a resource, patient, informer or an incident.
+      properties:
+        key:
+          type: string
+          description: The key of the appendix
+        value:
+          type: string
+          description: the value of the appendix
+    Message:
+      description: Describes a message about the operation.
+      properties: 
+        sharedIncidentId:
+          type: string
+          description: GUID for identifying the deployment on participating systems
+        message:
+          type: string
+          description: message text
+    Confirmation:
+      description: Describes an acknowledgement in the sense of the incident transfer and is only relevant for this.
+      properties:
+        sharedIncidentId:
+          type: string
+          description: GUID to identify the incident on participating systems.
+        status:
+          type: string
+          enum: [ Accepted, Rejected ]
+          description: Status of acknowledgement
+        timestamp:
+          type: string
+          description: Time stamp at which the acknowledgement was made.
+        cause:
+          type: string
+          description: Reason for acknowledgement in case of error or if the incident was rejected
+        appendices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Appendix'
+          description: Additional attributes of the acknowledgement
+    PositiveConfirmation:
+      description: Describes a positive acknowledgement of a resource request and is only relevant for this resource request. A resource request can be followed by several positive acknowledgements. The dispatcher can inform the requesting control center that further resources are coming via a message for the operation.
+      properties:
+        requestId:
+          description: Unique Id of the resource request
+          type: string
+        timestamp:
+          description: Time stamp of the acknowledgement
+          type: string
+          format: date-time
+        resourceType:
+          description: Sent resource type
+          type: string
+        resourceName:
+          description: Name of the dispatched resource
+          type: string
+        message:
+          description: Confirmation message
+          type: string
+    NegativeConfirmation:
+      description: Describes a negative acknowledgement of a resource request and is only relevant for this.
+      properties:
+        requestId:
+          description: Unique Id of the resource request
+          type: string
+        timestamp:
+          description: Time stamp of the acknowledgement
+          type: string
+          format: date-time
+        reason:
+          description: Reason for rejection
+          type: string
+        message:
+          description: Confirmation message
+          type: string
+    ResourceTurnOutConfirmation:
+      description: Describes an acknowledgement indicating that the requested resource has been deployed. This DTO is only relevant for the resource request and may only be used after a positive confirmation DTO has been sent.
+      properties:
+        requestId:
+          description: Unique Id of the resource request
+          type: string
+        timestamp:
+          description: Time stamp of the acknowledgement
+          type: string
+          format: date-time
+        resourceType:
+          description: Sent resource type
+          type: string
+        resourceName:
+          description: Name of the dispatched resource
+          type: string
+        resourceId:
+          description: ResourceId of the dispatched resource
+          type: string
+        message:
+          description: Confirmation message
+          type: string
+    TemporaryPositiveConfirmation:
+      description: Describes a preliminary positive confirmation of a resource request and is only relevant for this. It can optionally be sent before the positive confirmation DTO in order to provide the dispatcher with a quick initial response where the specific resources have not yet been defined. 
+      properties:
+        requestId:
+          description: Unique Id of the resource request
+          type: string
+        timestamp:
+          description: Time stamp of the acknowledgement
+          type: string
+          format: date-time
+        message:
+          description: Confirmation message
+          type: string
+    Classification:
+      description: Describes an incident classification
+      properties:
+        abbreviation:
+          description: Classification abbreviation
+          type: string
+        description:
+          description: Classification description
+          type: string
+        classificationGroup:
+          description: Name of the classification group to which the keyword belongs
+          type: string
+    ResourceType:
+      description: Describes an resource type
+      properties:
+        abbreviation:
+          description: Abbreviation of the resource type
+          type: string
+        description:
+          description: Description of the resource type
+          type: string
